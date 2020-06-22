@@ -51,6 +51,7 @@ class Slide:
     def mode_selector(self):
         if(not self.INPUT_SWITCH_ENABLED.is_pressed):
             self.disabled()
+            return
         self._status = Mode.idle
 
     def start(self):
