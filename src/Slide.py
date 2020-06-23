@@ -10,23 +10,23 @@ class Mode(Enum):
 
 class Slide:
     # TODO: put inside a configuration file
-    _MIN_TIME = 10 
-    _MAX_TIME = 40
+    MIN_TIME = 10 
+    MAX_TIME = 40
 
     # Outputs
-    OUTPUT_GREEN_LED = gpiozero.LED(13)             # Green trffic light
-    OUTPUT_RED_LED = gpiozero.LED(19)               # Red traffic light
-    OUTPUT_BLUE_LED = gpiozero.LED(26)              # Someone is riding right now (for debugging)
+    GREEN = gpiozero.LED(13)             # Green trffic light
+    RED = gpiozero.LED(19)               # Red traffic light
+    BLUE = gpiozero.LED(26)              # Someone is riding right now (for debugging)
 
     # Inputs
-    INPUT_SENSOR_TOP = gpiozero.Button(24, pull_up=False)
-    INPUT_SENSOR_BOTTOM = gpiozero.Button(16, pull_up=False)
-    INPUT_RESET_HARD = gpiozero.Button(20, pull_up=False)          # clears current run and starts over again
-    INPUT_RESET_SOFT = gpiozero.Button(21, pull_up=False)          # terminate the application and restart it
-    INPUT_SWITCH_ENABLED = gpiozero.Button(6, pull_up=None, active_state=True)
+    TOP = gpiozero.Button(24, pull_up=False)
+    BOTTOM = gpiozero.Button(16, pull_up=False)
+    RESET_HARD = gpiozero.Button(20, pull_up=False)          # clears current run and starts over again
+    RESET_SOFT = gpiozero.Button(21, pull_up=False)          # terminate the application and restart it
+    ENABLED = gpiozero.Button(6, pull_up=None, active_state=True)
 
-    _rider = Rider()
-    _status = Mode
+    rider = Rider()
+    status = Mode
 
 
     def load_configuration(self, configuration):
@@ -38,9 +38,9 @@ class Slide:
 
     def __init__(self, configuration=None):
         # enable reset button
-        self.INPUT_RESET_SOFT.when_pressed = self.soft_reset
-        self.INPUT_RESET_HARD.when_pressed = self.hard_reset
-        self.INPUT_SWITCH_ENABLED.when_released = self.disabled
+        self.RESET_SOFT.when_pressed = self.soft_reset
+        self.RESET_HARD.when_pressed = self.hard_reset
+        self.ENABLED.when_released = self.disabled
 
         # TODO: signal interupt handler
         # TODO: load highscores
@@ -49,10 +49,10 @@ class Slide:
         return
 
     def mode_selector(self):
-        if(not self.INPUT_SWITCH_ENABLED.is_pressed):
+        if(not self.ENABLED.is_pressed):
             self.disabled()
             return
-        self._status = Mode.idle
+        self.status = Mode.idle
 
     def start(self):
         self.mode_picker()
@@ -62,9 +62,9 @@ class Slide:
         print("mode picker")
         while (True):
             self.mode_selector()
-            if(self._status == Mode.idle):
+            if(self.status == Mode.idle):
                 self.idle()
-            if(self._status == Mode.running):
+            if(self.status == Mode.running):
                 self.running()
 
         return
@@ -74,15 +74,15 @@ class Slide:
         print("disabled")
 
         # turn off lights
-        self.OUTPUT_GREEN_LED.off()
-        self.OUTPUT_RED_LED.off()
-        self.OUTPUT_BLUE_LED.off()
+        self.GREEN.off()
+        self.RED.off()
+        self.BLUE.off()
         # wait for enable switch
-        while (not self.INPUT_SWITCH_ENABLED.is_pressed):
+        while (not self.ENABLED.is_pressed):
             pass
 
         print("enabled")
-        self._status = Mode.idle
+        self.status = Mode.idle
         return
 
 
@@ -90,21 +90,21 @@ class Slide:
         print("idle")
 
         # Green light!
-        self.OUTPUT_RED_LED.off()
-        self.OUTPUT_GREEN_LED.on()
+        self.RED.off()
+        self.GREEN.on()
 
         # wait for a rider
-        while (not self.INPUT_SENSOR_TOP.is_pressed):
+        while (not self.TOP.is_pressed):
             # return if interupted by reset or disable
-            if (self._status != Mode.idle):
+            if (self.status != Mode.idle):
                 return
 
         # Red light! Start timer
-        self._rider.start_time()
-        self.OUTPUT_RED_LED.on()
-        self.OUTPUT_GREEN_LED.off()
+        self.rider.start_time()
+        self.RED.on()
+        self.GREEN.off()
 
-        self._status = Mode.running
+        self.status = Mode.running
         return
 
 
@@ -112,22 +112,22 @@ class Slide:
         print("running")
 
         # indicate that someone is riding
-        self.OUTPUT_BLUE_LED.on()
+        self.BLUE.on()
 
         # wait for a user to exit the track.
-        while (not self.INPUT_SENSOR_BOTTOM.is_pressed):
-            if (self._status != Mode.running):
+        while (not self.BOTTOM.is_pressed):
+            if (self.status != Mode.running):
                 return
 
         # print time and speed
-        currentTime = self._rider.get_time()
+        currentTime = self.rider.get_time()
         print("time: " + str(round(currentTime,2)) + "s")
-        currentSpeed = self._rider.get_speed(100) # assuming the slide is 100m long
+        currentSpeed = self.rider.get_speed(100) # assuming the slide is 100m long
         print("speed: " + str(round(currentSpeed,2)) + "m/s")
 
 
-        self.OUTPUT_BLUE_LED.off()
-        self._status = Mode.idle
+        self.BLUE.off()
+        self.status = Mode.idle
 
         return
 
@@ -136,10 +136,10 @@ class Slide:
         print("soft reset")
 
         # set disabled to quit all states and restart
-        self._status = Mode.disabled
-        self.OUTPUT_BLUE_LED.off()
-        self.OUTPUT_RED_LED.off()
-        self.OUTPUT_GREEN_LED.off()
+        self.status = Mode.disabled
+        self.BLUE.off()
+        self.RED.off()
+        self.GREEN.off()
         return
 
     # spawn a cloned process

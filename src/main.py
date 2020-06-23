@@ -2,6 +2,7 @@
 from Slide import Slide
 
 def main():
+    # TODO: start web server
     white_slide = Slide()
     white_slide.start()
 
