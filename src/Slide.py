@@ -12,6 +12,8 @@ class Slide:
     # TODO: put inside a configuration file
     MIN_TIME = 10 
     MAX_TIME = 40
+    DISTANCE = 100 # assuming the slide is 100m long
+
 
     # Outputs
     GREEN = gpiozero.LED(13)             # Green trffic light
@@ -122,7 +124,7 @@ class Slide:
         # print time and speed
         currentTime = self.rider.get_time()
         print("time: " + str(round(currentTime,2)) + "s")
-        currentSpeed = self.rider.get_speed(100) # assuming the slide is 100m long
+        currentSpeed = self.rider.get_speed(self.DISTANCE)
         print("speed: " + str(round(currentSpeed,2)) + "m/s")
 
 
