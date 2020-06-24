@@ -38,6 +38,7 @@ class Slide:
         # TODO: load highscores
 
         self.load_configuration(configuration)
+        self.start()
         return
 
     def mode_selector(self):

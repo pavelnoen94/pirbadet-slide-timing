@@ -4,16 +4,12 @@ import threading
 
 def main():
     # TODO: start web server
-    white_slide = Slide("white_slide.ini")
-    purple_slide = Slide("purple_slide.ini")
     
-    thread1 = threading.Thread(target=white_slide.start)
-    thread2 = threading.Thread(target=purple_slide.start)
-
+    configurations = ["white_slide.ini", "purple_slide.ini"]
     threads = []
 
-    threads.append(thread1)
-    threads.append(thread2)
+    for configuration in configurations:
+        threads.append(threading.Thread(target=Slide, args=[configuration]))
 
     for thread in threads:
         thread.start()
