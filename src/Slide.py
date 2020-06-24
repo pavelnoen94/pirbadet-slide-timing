@@ -122,7 +122,7 @@ class Slide:
         self.RED_LED.on()
         self.GREEN_LED.off()
         relay_off(self.GREEN_RELAY)
-        relay_lib_seedrelay_on(self.RED_RELAY)
+        relay_on(self.RED_RELAY)
 
         self.status = Mode.running
         return

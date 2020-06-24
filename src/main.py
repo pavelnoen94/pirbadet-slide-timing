@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import Slide, threading, flask, json
+import Slide, threading, flask
 
 
 def main():
