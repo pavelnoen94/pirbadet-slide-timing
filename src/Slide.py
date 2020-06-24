@@ -116,17 +116,27 @@ class Slide:
         # indicate that someone is riding
         self.BLUE.on()
 
+        # ignore top input for minimum time
+        while (self.rider.get_time() < self.MIN_TIME):
+            # return if interupted by reset or disable
+            if (self.status != Mode.running):
+                return
+
         # wait for a user to exit the track.
         while (not self.BOTTOM.is_pressed):
             if (self.status != Mode.running):
                 return
+            if (self.rider.get_time() > self.MAX_TIME):
+                break
 
-        # print time and speed
-        currentTime = self.rider.get_time()
-        print("time: " + str(round(currentTime,2)) + "s")
-        currentSpeed = self.rider.get_speed(self.DISTANCE)
-        print("speed: " + str(round(currentSpeed,2)) + "m/s")
-
+        if (self.rider.get_time() > self.MAX_TIME):
+                print("auto reset")            
+        else:
+            # print time and speed
+            currentTime = self.rider.get_time()
+            print("time: " + str(round(currentTime,2)) + "s")
+            currentSpeed = self.rider.get_speed(self.DISTANCE)
+            print("speed: " + str(round(currentSpeed,2)) + "m/s")
 
         self.BLUE.off()
         self.status = Mode.idle
@@ -147,9 +157,6 @@ class Slide:
     # spawn a cloned process
     def hard_reset(self):
         print("hard reset")
-        # import os
-        # os.fork()
-        # if (os.getpid() != 0):
-        #     import sys
-        #     sys.exit(0)
+        self.soft_reset() # temp solution
+        # TODO: restart self
         return
