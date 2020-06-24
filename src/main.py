@@ -3,7 +3,7 @@ from Slide import Slide
 
 def main():
     # TODO: start web server
-    white_slide = Slide()
+    white_slide = Slide("hvit_sklie.ini")
     white_slide.start()
 
 if __name__ == "__main__":

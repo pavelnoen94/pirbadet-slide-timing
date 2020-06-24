@@ -1,4 +1,4 @@
-import gpiozero, time, Rider, highscores
+import gpiozero, time, Rider, highscores, configparser
 from enum import Enum
 from Rider import Rider
 
@@ -6,42 +6,33 @@ class Mode(Enum):
     disabled = 1
     idle = 2
     running = 3
+    quitting = 4
 
 
 class Slide:
-    # TODO: put inside a configuration file
-    MIN_TIME = 10 
-    MAX_TIME = 40
-    DISTANCE = 100 # assuming the slide is 100m long
-
-
-    # Outputs
-    GREEN = gpiozero.LED(13)             # Green trffic light
-    RED = gpiozero.LED(19)               # Red traffic light
-
-    # Inputs
-    TOP = gpiozero.Button(24, pull_up=False)
-    BOTTOM = gpiozero.Button(16, pull_up=False)
-    RESET_HARD = gpiozero.Button(20, pull_up=False)          # clears current run and starts over again
-    RESET_SOFT = gpiozero.Button(21, pull_up=False)          # terminate the application and restart it
-    ENABLED = gpiozero.Button(6, pull_up=None, active_state=True)
-
     rider = Rider()
     status = Mode
 
-
     def load_configuration(self, configuration):
-        # TODO: load configuration from file
-        pass
+        config = configparser.ConfigParser()
+        config.read(configuration)
 
+        self.distance = int(config["DEFAULT"]["distance"])
+
+        self.GREEN = gpiozero.LED(int(config["GPIO"]["light_green"]))
+        self.RED = gpiozero.LED(int(config["GPIO"]["light_red"]))
+
+        self.TOP = gpiozero.Button(int(config["GPIO"]["sensor_top"]), pull_up=False)
+        self.BOTTOM = gpiozero.Button(int(config["GPIO"]["sensor_bottom"]), pull_up=False)
+
+        self.MAX_TIME = int(config["TIMING"]["auto_reset_time"])
+        self.MIN_TIME = int(config["TIMING"]["ignore_time"])
+
+        print("loaded configuration: " + config["DEFAULT"]["name"])
         return
 
 
     def __init__(self, configuration=None):
-        # enable reset button
-        self.RESET_SOFT.when_pressed = self.soft_reset
-        self.RESET_HARD.when_pressed = self.hard_reset
-        self.ENABLED.when_released = self.disabled
 
         # TODO: signal interupt handler
         # TODO: load highscores
@@ -50,7 +41,7 @@ class Slide:
         return
 
     def mode_selector(self):
-        if(not self.ENABLED.is_pressed):
+        if(self.status == Mode.disabled):
             self.disabled()
             return
         self.status = Mode.idle
@@ -67,7 +58,11 @@ class Slide:
                 self.idle()
             if(self.status == Mode.running):
                 self.running()
-
+            if(self.status == Mode.disabled):
+                self.disabled()
+            if(self.status == Mode.quitting):
+                # TODO: close all open files, save configurations
+                return
         return
 
 
@@ -78,7 +73,7 @@ class Slide:
         self.GREEN.off()
         self.RED.off()
         # wait for enable switch
-        while (not self.ENABLED.is_pressed):
+        while (self.status == Mode.disabled):
             pass
 
         print("enabled")
@@ -130,7 +125,7 @@ class Slide:
             # print time and speed
             currentTime = self.rider.get_time()
             print("time: " + str(round(currentTime,2)) + "s")
-            currentSpeed = self.rider.get_speed(self.DISTANCE)
+            currentSpeed = self.rider.get_speed(self.distance)
             print("speed: " + str(round(currentSpeed,2)) + "m/s")
 
         self.status = Mode.idle
