@@ -1,4 +1,4 @@
-import gpiozero, time, Rider, highscores, configparser, flask, relay_lib_seed
+import gpiozero, time, Rider, highscores, configparser, flask, relay_lib_seed, signal, sys
 from enum import Enum
 from Rider import Rider
 from relay_lib_seed import *
@@ -37,11 +37,17 @@ class Slide:
         print("loaded configuration: " + self.name)
         return
 
+    def endProcess(self, signalnum=None, handler=None):
+        relay_lib_seed.relay_off(self.GREEN_RELAY)
+        relay_lib_seed.relay_off(self.RED_RELAY)
+        sys.exit()
 
     def __init__(self, api, configuration=None):
-        # TODO: signal interupt handler
         # TODO: load highscores
+        # sigint handler
+        signal.signal(signal.SIGINT, self.endProcess)
 
+        # configuration
         self.load_configuration(configuration)
         self.configure_server(api)
 
