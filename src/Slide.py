@@ -45,7 +45,7 @@ class Slide:
     def __init__(self, api, configuration=None):
         # TODO: load highscores
         # sigint handler
-        signal.signal(signal.SIGINT, self.endProcess)
+        #signal.signal(signal.SIGINT, self.endProcess)
 
         # configuration
         self.load_configuration(configuration)
