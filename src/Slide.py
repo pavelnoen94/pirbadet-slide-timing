@@ -1,4 +1,4 @@
-import gpiozero, time, Rider, highscores, configparser
+import gpiozero, time, Rider, highscores, configparser, flask
 from enum import Enum
 from Rider import Rider
 
@@ -7,7 +7,6 @@ class Mode(Enum):
     idle = 2
     running = 3
     quitting = 4
-
 
 class Slide:
     rider = Rider()
@@ -28,18 +27,30 @@ class Slide:
         self.MAX_TIME = int(config["TIMING"]["auto_reset_time"])
         self.MIN_TIME = int(config["TIMING"]["ignore_time"])
 
+        self.route_status = "/" + config["DEFAULT"]["name"] + "/status"
+        self.route_enable = "/" + config["DEFAULT"]["name"] + "/enable"
+        self.route_disable = "/" + config["DEFAULT"]["name"] + "/disable"
+
         print("loaded configuration: " + config["DEFAULT"]["name"])
         return
 
 
-    def __init__(self, configuration=None):
-
+    def __init__(self, api, configuration=None):
         # TODO: signal interupt handler
         # TODO: load highscores
 
         self.load_configuration(configuration)
+        print(self.route_enable)
+        self.configure_server(api)
+
         self.start()
         return
+
+    def configure_server(self, api):
+        self.api = api
+        api.add_url_rule(self.route_status, self.route_status ,self.request_status)
+        api.add_url_rule(self.route_enable, self.route_enable ,self.request_enable)
+        api.add_url_rule(self.route_disable, self.route_disable ,self.request_disable)
 
     def mode_selector(self):
         if(self.status == Mode.disabled):
@@ -149,3 +160,14 @@ class Slide:
         self.soft_reset() # temp solution
         # TODO: restart self
         return
+
+    def request_status(self):
+        return str(self.status)
+
+    def request_enable(self):
+        self.status = Mode.idle
+        return "ok"
+
+    def request_disable(self):
+        self.status = Mode.disabled
+        return "ok"

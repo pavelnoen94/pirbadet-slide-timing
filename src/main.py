@@ -1,22 +1,28 @@
 #!/usr/bin/env python3
-from Slide import Slide
-import threading
+import Slide, threading, flask, json
+
 
 def main():
-    # TODO: start web server
-    
+
+    # load configurations
     configurations = ["white_slide.ini", "purple_slide.ini"]
+
+    # set up web server and threds for slides
+    api = flask.Flask(__name__)
     threads = []
 
+    # load all slides in threads and start
     for configuration in configurations:
-        threads.append(threading.Thread(target=Slide, args=[configuration]))
+        threads.append(threading.Thread(target=Slide.Slide, args=[api, configuration]))
 
     for thread in threads:
         thread.start()
 
+    # start the web server
+    api.run(host="0.0.0.0")
+
     for thread in threads:
         thread.join()
-
 
 if __name__ == "__main__":
     main()
