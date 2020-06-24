@@ -18,7 +18,6 @@ class Slide:
     # Outputs
     GREEN = gpiozero.LED(13)             # Green trffic light
     RED = gpiozero.LED(19)               # Red traffic light
-    BLUE = gpiozero.LED(26)              # Someone is riding right now (for debugging)
 
     # Inputs
     TOP = gpiozero.Button(24, pull_up=False)
@@ -78,7 +77,6 @@ class Slide:
         # turn off lights
         self.GREEN.off()
         self.RED.off()
-        self.BLUE.off()
         # wait for enable switch
         while (not self.ENABLED.is_pressed):
             pass
@@ -113,9 +111,6 @@ class Slide:
     def running(self):
         print("running")
 
-        # indicate that someone is riding
-        self.BLUE.on()
-
         # ignore top input for minimum time
         while (self.rider.get_time() < self.MIN_TIME):
             # return if interupted by reset or disable
@@ -138,7 +133,6 @@ class Slide:
             currentSpeed = self.rider.get_speed(self.DISTANCE)
             print("speed: " + str(round(currentSpeed,2)) + "m/s")
 
-        self.BLUE.off()
         self.status = Mode.idle
 
         return
@@ -149,7 +143,6 @@ class Slide:
 
         # set disabled to quit all states and restart
         self.status = Mode.disabled
-        self.BLUE.off()
         self.RED.off()
         self.GREEN.off()
         return
