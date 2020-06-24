@@ -1,6 +1,7 @@
-import gpiozero, time, Rider, highscores, configparser, flask
+import gpiozero, time, Rider, highscores, configparser, flask, signal, sys
 from enum import Enum
 from Rider import Rider
+from relay_lib_seed import *
 
 class Mode(Enum):
     disabled = 1
@@ -18,8 +19,10 @@ class Slide:
 
         self.distance = int(config["DEFAULT"]["distance"])
 
-        self.GREEN = gpiozero.LED(int(config["GPIO"]["light_green"]))
-        self.RED = gpiozero.LED(int(config["GPIO"]["light_red"]))
+        self.GREEN_LED = gpiozero.LED(int(config["GPIO"]["light_green"]))
+        self.RED_LED = gpiozero.LED(int(config["GPIO"]["light_red"]))
+        self.GREEN_RELAY = int(config["RELAY"]["light_green"])
+        self.RED_RELAY = int(config["RELAY"]["light_red"])
 
         self.TOP = gpiozero.Button(int(config["GPIO"]["sensor_top"]), pull_up=False)
         self.BOTTOM = gpiozero.Button(int(config["GPIO"]["sensor_bottom"]), pull_up=False)
@@ -27,20 +30,19 @@ class Slide:
         self.MAX_TIME = int(config["TIMING"]["auto_reset_time"])
         self.MIN_TIME = int(config["TIMING"]["ignore_time"])
 
-        self.route_status = "/" + config["DEFAULT"]["name"] + "/status"
-        self.route_enable = "/" + config["DEFAULT"]["name"] + "/enable"
-        self.route_disable = "/" + config["DEFAULT"]["name"] + "/disable"
-
-        print("loaded configuration: " + config["DEFAULT"]["name"])
+        self.route_status = "/slide/" + config["DEFAULT"]["name"] + "/status"
+        self.route_enable = "/slide/" + config["DEFAULT"]["name"] + "/enable"
+        self.route_disable = "/slide/" + config["DEFAULT"]["name"] + "/disable"
+        self.route_reset = "/slide/" + config["DEFAULT"]["name"] + "/reset"
+        self.name = config["DEFAULT"]["name"]
+        print("loaded configuration: " + self.name)
         return
 
-
     def __init__(self, api, configuration=None):
-        # TODO: signal interupt handler
         # TODO: load highscores
 
+        # configuration
         self.load_configuration(configuration)
-        print(self.route_enable)
         self.configure_server(api)
 
         self.start()
@@ -48,9 +50,10 @@ class Slide:
 
     def configure_server(self, api):
         self.api = api
-        api.add_url_rule(self.route_status, self.route_status ,self.request_status)
-        api.add_url_rule(self.route_enable, self.route_enable ,self.request_enable)
-        api.add_url_rule(self.route_disable, self.route_disable ,self.request_disable)
+        api.add_url_rule(self.route_status, self.route_status ,self.request_status, methods=["POST"])
+        api.add_url_rule(self.route_enable, self.route_enable ,self.request_enable, methods=["POST"])
+        api.add_url_rule(self.route_disable, self.route_disable ,self.request_disable, methods=["POST"])
+        api.add_url_rule(self.route_reset, self.route_reset ,self.request_reset, methods=["POST"])
 
     def mode_selector(self):
         if(self.status == Mode.disabled):
@@ -63,8 +66,8 @@ class Slide:
 
 
     def mode_picker(self):
-        print("mode picker")
         while (True):
+            print("[" + self.name + "] mode picker")
             self.mode_selector()
             if(self.status == Mode.idle):
                 self.idle()
@@ -79,26 +82,34 @@ class Slide:
 
 
     def disabled(self):
-        print("disabled")
+        print("[" + self.name + "] disabled")
 
         # turn off lights
-        self.GREEN.off()
-        self.RED.off()
+        self.GREEN_LED.off()
+        self.RED_LED.off()
+
+        relay_lib_seed.relay_off(self.GREEN_RELAY)
+        relay_lib_seed.relay_off(self.RED_RELAY)
+
         # wait for enable switch
         while (self.status == Mode.disabled):
             pass
 
-        print("enabled")
+        print("[" + self.name + "] enabled")
         self.status = Mode.idle
         return
 
 
     def idle(self):
-        print("idle")
+        print("[" + self.name + "] idle")
 
         # Green light!
-        self.RED.off()
-        self.GREEN.on()
+        self.RED_LED.off()
+        self.GREEN_LED.on()
+
+        relay_lib_seed.relay_off(self.RED_RELAY)
+        relay_lib_seed.relay_on(self.GREEN_RELAY)
+
 
         # wait for a rider
         while (not self.TOP.is_pressed):
@@ -108,15 +119,17 @@ class Slide:
 
         # Red light! Start timer
         self.rider.start_time()
-        self.RED.on()
-        self.GREEN.off()
+        self.RED_LED.on()
+        self.GREEN_LED.off()
+        relay_lib_seed.relay_off(self.GREEN_RELAY)
+        relay_lib_seed.relay_on(self.RED_RELAY)
 
         self.status = Mode.running
         return
 
 
     def running(self):
-        print("running")
+        print("[" + self.name + "] running")
 
         # ignore top input for minimum time
         while (self.rider.get_time() < self.MIN_TIME):
@@ -132,13 +145,13 @@ class Slide:
                 break
 
         if (self.rider.get_time() > self.MAX_TIME):
-                print("auto reset")            
+                print("[" + self.name + "] auto reset")
         else:
             # print time and speed
             currentTime = self.rider.get_time()
-            print("time: " + str(round(currentTime,2)) + "s")
+            print("[" + self.name + "] time: " + str(round(currentTime,2)) + "s")
             currentSpeed = self.rider.get_speed(self.distance)
-            print("speed: " + str(round(currentSpeed,2)) + "m/s")
+            print("[" + self.name + "] speed: " + str(round(currentSpeed,2)) + "m/s")
 
         self.status = Mode.idle
 
@@ -146,17 +159,21 @@ class Slide:
 
     # reset timers and stuff
     def soft_reset(self):
-        print("soft reset")
+        print("[" + self.name + "] soft reset")
 
         # set disabled to quit all states and restart
-        self.status = Mode.disabled
-        self.RED.off()
-        self.GREEN.off()
+        self.status = Mode.idle
+        self.RED_LED.off()
+        self.GREEN_LED.off()
+
+        relay_lib_seed.relay_off(self.GREEN_RELAY)
+        relay_lib_seed.relay_off(self.RED_RELAY)
+
         return
 
     # spawn a cloned process
     def hard_reset(self):
-        print("hard reset")
+        print("[" + self.name + "] hard reset")
         self.soft_reset() # temp solution
         # TODO: restart self
         return
@@ -166,8 +183,12 @@ class Slide:
 
     def request_enable(self):
         self.status = Mode.idle
-        return "ok"
+        return str(self.status)
 
     def request_disable(self):
         self.status = Mode.disabled
-        return "ok"
+        return str(self.status)
+
+    def request_reset(self):
+        self.soft_reset()
+        return str(self.status)
