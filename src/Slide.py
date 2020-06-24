@@ -30,9 +30,10 @@ class Slide:
         self.MAX_TIME = int(config["TIMING"]["auto_reset_time"])
         self.MIN_TIME = int(config["TIMING"]["ignore_time"])
 
-        self.route_status = "/" + config["DEFAULT"]["name"] + "/status"
-        self.route_enable = "/" + config["DEFAULT"]["name"] + "/enable"
-        self.route_disable = "/" + config["DEFAULT"]["name"] + "/disable"
+        self.route_status = "/slide/" + config["DEFAULT"]["name"] + "/status"
+        self.route_enable = "/slide/" + config["DEFAULT"]["name"] + "/enable"
+        self.route_disable = "/slide/" + config["DEFAULT"]["name"] + "/disable"
+        self.route_reset = "/slide/" + config["DEFAULT"]["name"] + "/reset"
         self.name = config["DEFAULT"]["name"]
         print("loaded configuration: " + self.name)
         return
@@ -56,9 +57,10 @@ class Slide:
 
     def configure_server(self, api):
         self.api = api
-        api.add_url_rule(self.route_status, self.route_status ,self.request_status)
-        api.add_url_rule(self.route_enable, self.route_enable ,self.request_enable)
-        api.add_url_rule(self.route_disable, self.route_disable ,self.request_disable)
+        api.add_url_rule(self.route_status, self.route_status ,self.request_status, methods=["POST"])
+        api.add_url_rule(self.route_enable, self.route_enable ,self.request_enable, methods=["POST"])
+        api.add_url_rule(self.route_disable, self.route_disable ,self.request_disable, methods=["POST"])
+        api.add_url_rule(self.route_reset, self.route_reset ,self.request_reset, methods=["POST"])
 
     def mode_selector(self):
         if(self.status == Mode.disabled):
@@ -167,7 +169,7 @@ class Slide:
         print("[" + self.name + "] soft reset")
 
         # set disabled to quit all states and restart
-        self.status = Mode.disabled
+        self.status = Mode.idle
         self.RED_LED.off()
         self.GREEN_LED.off()
 
@@ -188,8 +190,12 @@ class Slide:
 
     def request_enable(self):
         self.status = Mode.idle
-        return "ok"
+        return str(self.status)
 
     def request_disable(self):
         self.status = Mode.disabled
-        return "ok"
+        return str(self.status)
+
+    def request_reset(self):
+        self.soft_reset()
+        return str(self.status)
