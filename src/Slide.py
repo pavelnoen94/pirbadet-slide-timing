@@ -1,7 +1,7 @@
 import gpiozero, time, Rider, highscores, configparser, flask, signal, sys
 from enum import Enum
 from Rider import Rider
-from relay_lib_seed import *
+from relay_lib_seeed import relay_off, relay_on
 
 class Mode(Enum):
     disabled = 1
@@ -88,8 +88,8 @@ class Slide:
         self.GREEN_LED.off()
         self.RED_LED.off()
 
-        relay_lib_seed.relay_off(self.GREEN_RELAY)
-        relay_lib_seed.relay_off(self.RED_RELAY)
+        relay_off(self.GREEN_RELAY)
+        relay_off(self.RED_RELAY)
 
         # wait for enable switch
         while (self.status == Mode.disabled):
@@ -107,8 +107,8 @@ class Slide:
         self.RED_LED.off()
         self.GREEN_LED.on()
 
-        relay_lib_seed.relay_off(self.RED_RELAY)
-        relay_lib_seed.relay_on(self.GREEN_RELAY)
+        relay_off(self.RED_RELAY)
+        relay_on(self.GREEN_RELAY)
 
 
         # wait for a rider
@@ -121,8 +121,8 @@ class Slide:
         self.rider.start_time()
         self.RED_LED.on()
         self.GREEN_LED.off()
-        relay_lib_seed.relay_off(self.GREEN_RELAY)
-        relay_lib_seed.relay_on(self.RED_RELAY)
+        relay_off(self.GREEN_RELAY)
+        relay_lib_seedrelay_on(self.RED_RELAY)
 
         self.status = Mode.running
         return
@@ -166,8 +166,8 @@ class Slide:
         self.RED_LED.off()
         self.GREEN_LED.off()
 
-        relay_lib_seed.relay_off(self.GREEN_RELAY)
-        relay_lib_seed.relay_off(self.RED_RELAY)
+        relay_off(self.GREEN_RELAY)
+        relay_off(self.RED_RELAY)
 
         return
 
