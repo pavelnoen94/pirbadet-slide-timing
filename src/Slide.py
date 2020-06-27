@@ -1,4 +1,4 @@
-import gpiozero, time, Rider, configparser
+import gpiozero, time, Rider, configparser, highscores, signal
 from enum import Enum
 from Rider import Rider
 
@@ -13,10 +13,12 @@ class Mode(Enum):
 class Slide:
 
 
-    def __init__(self, configuration=None):
-        # TODO: load highscores
+    def __init__(self, configuration, termination_signal):
+        self.termination_signal = termination_signal
         self.load_configuration(configuration)
+        self.highscore = highscores.high_scores(self.name)
         self.start()
+
         return
 
 
@@ -67,6 +69,7 @@ class Slide:
         print("Time: " + str(round(self.rider.get_time(),2)) + "s")
         print("Speed: " + str(round(self.rider.get_speed(self.distance),2)) + "m/s")
 
+        self.highscore.add_time(round(self.rider.get_time(),2))
         self.status = Mode.idle
         self.GREEN_LED.on()
         self.RED_LED.off()
@@ -91,10 +94,15 @@ class Slide:
         self.status = Mode.idle
         self.GREEN_LED.on()
 
-        while(True):
+        while not self.termination_signal.is_set():
             if (self.status == Mode.running) and (self.rider.get_time() > self.MAX_TIME):
                 self.interupt_soft_reset()
             time.sleep(1)
+        self.highscore.save_highscores()
+        self.highscore.print_highscores()
 
         return
 
+    def quit(self):
+        print("quit")
+        self.mode = Mode.quitting

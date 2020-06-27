@@ -3,65 +3,88 @@ import pickle
 
 
 class high_scores:
-    BACKUP_PATH = "highscores.pkl"
-    last = (None, None)
-    today = (None, None)
-    week = (None, None)
-    month = (None, None)
-    best_ever = (None, None)
 
-    def update_time(self, time):
+
+    def __init__(self, name):
+        self.backup_path = name + ".highscores.pkl"
+        self.last = (None, None)
+        self.today = (None, None)
+        self.week = (None, None)
+        self.month = (None, None)
+        self.best_ever = (None, None)
+        self.load_highscores()
+
+        return
+
+
+    def add_time(self, time):
         if (time == None):
             return
 
         self.last = (time, date.now())
 
-        if (time < self.today):
+        try:
+            if (time < self.today[0]):
+                self.today = (time, date.now())
+            else:
+                return
+        except TypeError:
             self.today = (time, date.now())
-        else:
-            return
 
-        if (time < self.week):
+        try:
+            if (time < self.week[0]):
+                self.week = (time, date.now())
+            else:
+                return
+        except TypeError:
             self.week = (time, date.now())
-        else:
-            return
 
-        if (time < self.month):
+        try:
+            if (time < self.month[0]):
+                self.month = (time, date.now())
+            else:
+                return
+        except TypeError:
             self.month = (time, date.now())
-        else:
-            return
 
-        if (time < self.best_ever):
+        try:
+            if (time < self.best_ever[0]):
+                self.best_ever = (time, date.now())
+        except TypeError:
             self.best_ever = (time, date.now())
+
+        return
+
 
     def update_highscores(self):
         # compare todays date and current highscores.
         # clear out highscores that are out of date
 
-        if ( self.today[1].day != date.now().day ):
+        try:
+            if (self.today[1].day != date.now().day):
+                self.today = (None, None)
+        except AttributeError:
             self.today = (None, None)
-
-        if ( self.week[1].isocalendar()[1] != date.now.isocalendar()[1] ):
+        try:
+            if (self.week[1].isocalendar()[1] != date.now.isocalendar()[1]):
+                self.week = (None, None)
+        except AttributeError:
             self.week = (None, None)
-
-        if ( self.month[1].month != date.now.month() ):
+        try:
+            if (self.month[1].month != date.now.month()):
+                self.month = (None, None)
+        except AttributeError:
             self.month = (None, None)
 
-    def clear_best_today(self):
-        self.today = self.last
+        return
 
-    def clear_best_week(self):
-        self.week = self.today
-
-    def clear_best_month(self):
-        self.month = self.week
-
-    def clear_best_ever(self):
-        self.best_ever = self.month
 
     def save_highscores(self):
-        with open(self.BACKUP_PATH, "wb") as f:
+        with open(self.backup_path, "wb") as f:
             pickle.dump(self, f)
+
+        return
+
 
     def clear_all(self):
         self.last = (None, None)
@@ -70,17 +93,42 @@ class high_scores:
         self.month = (None, None)
         self.best_ever = (None, None)
 
+        return
+
+
     def load_highscores(self):
         try:
-            with open(self.BACKUP_PATH, "rb") as f:
+            with open(self.backup_path, "rb") as f:
                 temp = pickle.load(f)
+                self.last = (None, None)
+                self.today = temp.today
+                self.week = temp.week
+                self.month = temp.month
+                self.best_ever = temp.best_ever
+                self.update_highscores()
         except FileNotFoundError:
-            print("Backup file has not been found!")
-            return
+            pass
 
-        self.last = (None, None)
-        self.today = temp._today
-        self.week = temp._week
-        self.month = temp._month
-        self.best_ever = temp._best_ever
-        self.update_highscores()
+        return
+
+
+    def print_highscores(self):
+        print()
+        print("highscores:")
+
+        if (self.last[0] != None):
+            print("last: " + str(self.last[0]) +"s")
+
+        if (self.today[0] != None):
+            print("today: " + str(self.today[0]) +"s")
+
+        if (self.week[0] != None):
+            print("week: " + str(self.week[0]) +"s")
+
+        if (self.month[0] != None):
+            print("month: " + str(self.month[0]) +"s")
+
+        if (self.best_ever[0] != None):
+            print("best_ever: " + str(self.best_ever[0]) +"s")
+
+        return
