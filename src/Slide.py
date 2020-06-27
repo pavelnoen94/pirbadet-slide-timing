@@ -1,4 +1,4 @@
-import gpiozero, time, Rider, configparser, flask, multiprocessing
+import gpiozero, time, Rider, configparser, flask
 from enum import Enum
 from Rider import Rider
 
