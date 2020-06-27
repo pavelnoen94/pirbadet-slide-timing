@@ -5,7 +5,7 @@ import Slide, threading, flask
 def main():
 
     # load configurations
-    configurations = ["white_slide.ini", "purple_slide.ini"]
+    configurations = ["white_slide.ini"]
 
     # set up web server and threds for slides
     api = flask.Flask(__name__)
@@ -19,8 +19,8 @@ def main():
         thread.start()
 
     # start the web server
-    api.run(host="0.0.0.0")
 
+    api.run(host="0.0.0.0")
     for thread in threads:
         thread.join()
 
