@@ -1,6 +1,7 @@
-import gpiozero, time, Rider, configparser, flask
+import gpiozero, time, Rider, configparser
 from enum import Enum
 from Rider import Rider
+
 
 class Mode(Enum):
     disabled = 1
@@ -8,9 +9,16 @@ class Mode(Enum):
     running = 3
     quitting = 4
 
+
 class Slide:
-    rider = Rider()
-    status = Mode
+
+
+    def __init__(self, configuration=None):
+        # TODO: load highscores
+        self.load_configuration(configuration)
+        self.start()
+        return
+
 
     def load_configuration(self, configuration):
         config = configparser.ConfigParser()
@@ -27,22 +35,12 @@ class Slide:
         self.MAX_TIME = int(config["TIMING"]["auto_reset_time"])
         self.MIN_TIME = int(config["TIMING"]["ignore_time"])
 
-        self.route_status = "/slide/" + config["DEFAULT"]["name"] + "/status"
         self.name = config["DEFAULT"]["name"]
+        self.rider = Rider()
+        self.status = Mode
+
         print("loaded configuration: " + self.name)
-        return
 
-    def configure_server(self, api):
-        self.api = api
-        api.add_url_rule(self.route_status, self.route_status ,self.request_status, methods=["POST"])
-
-    def __init__(self, api, configuration=None):
-        # TODO: load highscores
-
-        # configuration
-        self.load_configuration(configuration)
-        self.configure_server(api)
-        self.start()
         return
 
 
@@ -55,6 +53,9 @@ class Slide:
         self.rider.start_time()
         self.GREEN_LED.off()
         self.RED_LED.on()
+
+        return
+
 
     def interupt_sensor_bottom(self):
         if(self.status == Mode.idle):
@@ -70,16 +71,18 @@ class Slide:
         self.GREEN_LED.on()
         self.RED_LED.off()
 
+        return
+
+
     def interupt_soft_reset(self):
         print("interupt_soft_reset")
         self.status = Mode.idle
         self.GREEN_LED.on()
         self.RED_LED.off()
 
-    def request_status(self):
-        print("request_status")
-        return str(self.status)
-    
+        return
+
+
     def start(self):
         print("start")
         self.TOP.when_pressed = self.interupt_sensor_top
@@ -94,3 +97,4 @@ class Slide:
             time.sleep(1)
 
         return
+
