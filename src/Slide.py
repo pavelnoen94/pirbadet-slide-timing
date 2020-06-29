@@ -1,4 +1,4 @@
-import gpiozero, time, Rider, configparser, highscores, signal
+import gpiozero, time, Rider, configparser, highscores, signal, mqtt
 from enum import Enum
 from Rider import Rider
 
@@ -16,7 +16,10 @@ class Slide:
     def __init__(self, configuration, termination_signal):
         self.termination_signal = termination_signal
         self.load_configuration(configuration)
-        self.highscore = highscores.high_scores(self.name)
+
+        self.mqtt = mqtt.message_sender(self.name, self.mqtt_server)
+
+        self.highscore = highscores.high_scores(self.name, self.mqtt)
         self.start()
 
         return
@@ -37,6 +40,7 @@ class Slide:
         self.MAX_TIME = int(config["TIMING"]["auto_reset_time"])
         self.MIN_TIME = int(config["TIMING"]["ignore_time"])
 
+        self.mqtt_server = str(config["SERVER"]["mqtt"])
         self.name = config["DEFAULT"]["name"]
         self.rider = Rider()
         self.status = Mode
@@ -47,12 +51,16 @@ class Slide:
 
 
     def interupt_sensor_top(self):
-        if(self.status == Mode.running):
+        if(self.status != Mode.idle):
             return
-        print("interupt_sensor_top")
-        
-        self.status = Mode.running
+        if(self.status == Mode.disabled):
+            return
+
         self.rider.start_time()
+        self.status = Mode.running
+
+        self.mqtt.send("status","busy")
+
         self.GREEN_LED.off()
         self.RED_LED.on()
 
@@ -64,12 +72,19 @@ class Slide:
             return
         if(self.rider.get_time() < self.MIN_TIME):
             return
-        print("interupt_sensor_bottom")
 
-        print("Time: " + str(round(self.rider.get_time(),2)) + "s")
-        print("Speed: " + str(round(self.rider.get_speed(self.distance),2)) + "m/s")
+        time = round(self.rider.get_time(),2)
+        speed = round(self.rider.get_speed(self.distance),2)
 
-        self.highscore.add_time(round(self.rider.get_time(),2))
+        if(self.status != Mode.disabled):
+            self.mqtt.send("status", "empty")
+
+        self.highscore.add_result(time, speed)
+        self.mqtt.send_obj("high_score" ,self.highscore.highscores)
+
+        if(self.status == Mode.disabled):
+            return
+
         self.status = Mode.idle
         self.GREEN_LED.on()
         self.RED_LED.off()
@@ -78,7 +93,9 @@ class Slide:
 
 
     def interupt_soft_reset(self):
-        print("interupt_soft_reset")
+        if(self.status == Mode.disabled):
+            return
+        self.mqtt.send("status", "reset")
         self.status = Mode.idle
         self.GREEN_LED.on()
         self.RED_LED.off()
@@ -86,23 +103,91 @@ class Slide:
         return
 
 
+    def mqtt_reciever(self, client, userdata, message):
+        command = str(message.payload)[2:-1]
+
+        if (command == "reset"):
+            self.interupt_soft_reset()
+            return
+
+        if (command == "disable"):
+            self.mqtt.send("status","disabled")
+            self.disable_handler()
+            return
+
+        if (command == "enable"):
+            self.mqtt.send("status","enabled")
+            self.enable_handler()
+            return
+
+        return
+
+
+    def disable_handler(self):
+        if(self.status == Mode.disabled):
+            return
+
+        # If the slide is busy: dont do anything
+        if(self.status == Mode.running):
+            self.status = Mode.disabled
+            return
+
+        # If the slide is free: set red light
+        if(self.status == Mode.idle):
+            self.GREEN_LED.off()
+            self.RED_LED.on()
+            self.status = Mode.disabled
+
+        return
+
+
+    def enable_handler(self):
+        if(self.status != Mode.disabled):
+            try:
+                if(self.rider.get_time() > self.MAX_TIME):
+                    # free
+                    self.status = Mode.idle
+                    self.GREEN_LED.on()
+                    self.RED_LED.off()
+                    return
+            except TypeError:
+                # never started
+                self.status = Mode.idle
+                self.GREEN_LED.on()
+                self.RED_LED.off()
+                return
+            # Slide is busy
+            self.status = Mode.running
+
+        return
+
+
     def start(self):
-        print("start")
+        self.mqtt.loop_start()
+        self.mqtt.subscribe("action")
+        self.mqtt.message_callback_add("action", self.mqtt_reciever)
+        self.mqtt.send("status", "active")
         self.TOP.when_pressed = self.interupt_sensor_top
         self.BOTTOM.when_pressed = self.interupt_sensor_bottom
 
         self.status = Mode.idle
         self.GREEN_LED.on()
 
+        # FIXME: this is ugly
         while not self.termination_signal.is_set():
-            if (self.status == Mode.running) and (self.rider.get_time() > self.MAX_TIME):
-                self.interupt_soft_reset()
+            try:
+                if (self.status == Mode.running) and (self.rider.get_time() > self.MAX_TIME):
+                    self.interupt_soft_reset()
+            except TypeError:
+                pass
             time.sleep(1)
-        self.highscore.save_highscores()
-        self.highscore.print_highscores()
 
+        self.quit()
         return
 
+
     def quit(self):
-        print("quit")
+        self.highscore.save_highscores()
+        self.mqtt.send("status", "shut down")
+        self.mqtt.loop_stop()
         self.mode = Mode.quitting
