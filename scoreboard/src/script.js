@@ -1,5 +1,5 @@
 //Using the HiveMQ public Broker, with a random client Id
-var client = new Paho.MQTT.Client("169.168.10.116", 8883, "myclientid_" + parseInt(Math.random() * 100, 10));
+var client = new Paho.MQTT.Client("127.0.0.1", 9001, "myclientid_" + parseInt(Math.random() * 100, 10));
 
 client.onConnectionLost = onConnectionLost;
 client.onMessageArrived = onMessageArrived;
