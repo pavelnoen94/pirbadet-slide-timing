@@ -35,6 +35,17 @@ function onMessageArrived(message) {
         return
     }
 
+    if (message.payloadString == "shut down") {
+        STOPWATCH.handleClickStop()
+        STOPWATCH.handleClickReset()
+        return
+    }
+
+    if (message.payloadString == "active") {
+        return
+    }
+
+
     json = JSON.parse(message.payloadString)
 
     last = new Number(json.last.time)
