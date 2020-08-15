@@ -7,7 +7,7 @@ terminator = multiprocessing.Event()
 def main():
 
     # load configurations
-    configurations = ["white_slide.ini"]
+    configurations = ["white_slide.ini", "purple_slide.ini"]
     threads = []
     # load all slides in threads and start
     for configuration in configurations:
