@@ -37,7 +37,7 @@ body {
 }
 
 .record-line {
-    padding: 2em;
+    padding: 1em;
 }
 
 .record-title,
@@ -61,7 +61,7 @@ body {
 
 #timer {
     font-size: 70px;
-    font-size: 3.5vw;
+    font-size: 10vw;
     color: white;
     margin-top: auto;
     margin-bottom: auto;
