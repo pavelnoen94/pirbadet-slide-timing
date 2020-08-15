@@ -21,10 +21,9 @@ class high_scores:
                     temp = pickle.load(f)
                     self.highscores = temp
                     self.update_highscores()
-        except (FileNotFoundError) as e:
-            print(e)
-            # TODO: delete the file if it is present
-
+        except (FileNotFoundError):
+            # file not found. Start a new session
+            print("[Info]: Saved high scores is not found. Starting a new session.")
             return
 
 

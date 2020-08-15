@@ -45,7 +45,7 @@ class Slide:
         self.rider = Rider()
         self.status = Mode
 
-        print("loaded configuration: " + self.name)
+        print("[Info]: Loaded configuration: " + self.name)
 
         return
 
