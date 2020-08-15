@@ -3,7 +3,7 @@ const slide = "white";
 const broker_address = "127.0.0.1";
 const port_number = 9001;
 
-var client = new Paho.MQTT.Client(broker_address, port_numebr, "myclientid_" + parseInt(Math.random() * 100, 10));
+var client = new Paho.MQTT.Client(broker_address, port_number, "myclientid_" + parseInt(Math.random() * 100, 10));
 
 client.onConnectionLost = onConnectionLost;
 client.onMessageArrived = onMessageArrived;
