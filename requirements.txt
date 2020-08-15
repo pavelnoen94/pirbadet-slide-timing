@@ -1,0 +1,11 @@
+appdirs==1.4.4
+colorzero==1.1
+distlib==0.3.1
+filelock==3.0.12
+gpiozero==1.5.1
+importlib-metadata==1.7.0
+paho-mqtt==1.5.0
+RPi.GPIO==0.7.0
+six==1.15.0
+virtualenv==20.0.30
+zipp==3.1.0
