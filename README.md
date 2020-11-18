@@ -1,2 +1,2 @@
 # tube-slide
-Timing system in water slide in Pirbadet water park
+Timing system for tube slides in water parks
