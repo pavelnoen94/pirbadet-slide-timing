@@ -158,22 +158,17 @@ class Slide:
 
 
     def enable_handler(self):
+        # if the slide isn't disabled, don't do anything.
         if(self.status != Mode.disabled):
-            try:
-                if(self.rider.get_time() > self.MAX_TIME):
-                    # free
-                    self.status = Mode.idle
-                    self.GREEN_LED.on()
-                    self.RED_LED.off()
-                    return
-            except TypeError:
-                # never started
-                self.status = Mode.idle
-                self.GREEN_LED.on()
-                self.RED_LED.off()
+            if (self.rider.get_time() < self.MAX_TIME and self.rider.get_time() > self.MIN_TIME):
+                # Someone is inside the slide right now
+                self.status = Mode.running
                 return
-            # Slide is busy
-            self.status = Mode.running
+
+            # Slide is empty. Go idle.
+            self.status = Mode.idle
+            self.GREEN_LED.on()
+            self.RED_LED.off()
 
         return
 
