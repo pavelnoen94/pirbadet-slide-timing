@@ -105,7 +105,7 @@ class Slide:
         return
 
     def interupt_reset_highscores(self):
-        self.mqtt.send("status", "reset highscore")
+        self.mqtt.send("status", "reset high score")
         self.highscore.reset()
         self.mqtt.send_obj("high_score" ,self.highscore.highscores)
         return
@@ -127,8 +127,8 @@ class Slide:
             self.mqtt.send("status","enabled")
             self.enable_handler()
             return
-        if (command == "reset_highscore"):
-            self.mqtt.send("status","reset highscore")
+        if (command == "reset_high_score"):
+            self.mqtt.send("status","reset highs core")
             self.highscore_reset_handler()
             return
 
