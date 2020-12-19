@@ -1,6 +1,6 @@
 //Using the HiveMQ public Broker, with a random client Id
 const slide = "white";
-const broker_address = "127.0.0.1";
+const broker_address = document.location.href.substr(7,14);
 const port_number = 9001;
 
 var client = new Paho.MQTT.Client(broker_address, port_number, "myclientid_" + parseInt(Math.random() * 100, 10));
@@ -47,6 +47,16 @@ function onMessageArrived(message) {
     }
 
     if (message.payloadString == "active") {
+        return;
+    }
+
+    if (message.payloadString == "reset highscore") {
+        const no_time = "00:00:00";
+        $("#record").text(no_time);
+        $("#month").text(no_time);
+        $("#week").text(no_time);
+        $("#today").text(no_time);
+        $("#last").text(no_time);
         return;
     }
 
