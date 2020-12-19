@@ -1,5 +1,5 @@
 //Using the HiveMQ public Broker, with a random client Id
-const slide = "white";
+const slide = window.location.search.substr(1) || "white";
 const broker_address = document.location.href.substr(7,14);
 const port_number = 9001;
 
@@ -15,6 +15,7 @@ function onConnect() {
     console.log("connected");
     client.subscribe(slide + "/high_score");
     client.subscribe(slide + "/status");
+    $("#title").text(slide + " slide");
 };
 
 function onConnectionLost(responseObject) {

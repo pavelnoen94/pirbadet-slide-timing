@@ -66,3 +66,9 @@ body {
     margin-top: auto;
     margin-bottom: auto;
 }
+
+#container-repo-link{
+    color: #777777;
+    font-size: 1.5em;
+    float: right;
+}
