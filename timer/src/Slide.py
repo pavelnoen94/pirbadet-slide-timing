@@ -143,7 +143,7 @@ class Slide:
         if(self.status == Mode.disabled):
             return
 
-        # If the slide is busy: dont do anything
+        # If the slide is busy: don't do anything
         if(self.status == Mode.running):
             self.status = Mode.disabled
             return
