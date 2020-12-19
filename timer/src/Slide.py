@@ -72,6 +72,8 @@ class Slide:
             return
         if(self.rider.get_time() < self.MIN_TIME):
             return
+        if(self.rider.get_time() > self.MAX_TIME):
+            return
 
         time = round(self.rider.get_time(),2)
         speed = round(self.rider.get_speed(self.distance),2)
@@ -102,8 +104,14 @@ class Slide:
 
         return
 
+    def interupt_reset_highscores(self):
+        self.mqtt.send("status", "reset highscore")
+        self.highscore.reset()
+        self.mqtt.send_obj("high_score" ,self.highscore.highscores)
+        return
 
-    def mqtt_reciever(self, client, userdata, message):
+
+    def mqtt_receiver(self, client, userdata, message):
         command = str(message.payload)[2:-1]
 
         if (command == "reset"):
@@ -119,8 +127,16 @@ class Slide:
             self.mqtt.send("status","enabled")
             self.enable_handler()
             return
+        if (command == "reset_highscore"):
+            self.mqtt.send("status","reset highscore")
+            self.highscore_reset_handler()
+            return
 
         return
+
+
+    def highscore_reset_handler(self):
+        self.highscore.reset()
 
 
     def disable_handler(self):
@@ -165,7 +181,7 @@ class Slide:
     def start(self):
         self.mqtt.loop_start()
         self.mqtt.subscribe("action")
-        self.mqtt.message_callback_add("action", self.mqtt_reciever)
+        self.mqtt.message_callback_add("action", self.mqtt_receiver)
         self.mqtt.send("status", "active")
         self.TOP.when_pressed = self.interupt_sensor_top
         self.BOTTOM.when_pressed = self.interupt_sensor_bottom

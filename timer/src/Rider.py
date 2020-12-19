@@ -1,7 +1,7 @@
 import time
 
 class Rider:
-    time = None
+    time = int("inf")
 
     def start_time(self):
         self.time = time.time()

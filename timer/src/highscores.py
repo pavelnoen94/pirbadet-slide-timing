@@ -67,6 +67,10 @@ class high_scores:
 
         return
 
+    def reset(self):
+        self.init_highscores()
+        self.save_highscores()
+        return
 
     def add_result(self, time, speed):
         if (time == None):
