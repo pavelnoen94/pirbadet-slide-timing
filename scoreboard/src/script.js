@@ -50,7 +50,7 @@ function onMessageArrived(message) {
         return;
     }
 
-    if (message.payloadString == "reset_highscores") {
+    if (message.payloadString == "reset highscore") {
         const no_time = "00:00:00";
         $("#record").text(no_time);
         $("#month").text(no_time);
